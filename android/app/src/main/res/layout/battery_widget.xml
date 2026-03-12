@@ -2,39 +2,40 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/widget_background"
-    android:orientation="vertical"
+    android:background="@android:color/transparent"
+    android:orientation="horizontal"
     android:gravity="center"
-    android:padding="8dp">
+    android:padding="4dp">
 
-    <!-- Hearts row -->
-    <TextView
-        android:id="@+id/heartsText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="♥♥♥♥♥♡♡♡♡♡"
-        android:textColor="#FFE03030"
-        android:textSize="20sp"
-        android:fontFamily="monospace"
-        android:letterSpacing="0.05"
-        android:shadowColor="#000000"
-        android:shadowDx="1"
-        android:shadowDy="1"
-        android:shadowRadius="1" />
-
-    <!-- Percentage + charge status -->
-    <TextView
-        android:id="@+id/percentageText"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="100%"
-        android:textColor="#FFFFFF"
-        android:textSize="14sp"
-        android:fontFamily="monospace"
-        android:shadowColor="#000000"
-        android:shadowDx="1"
-        android:shadowDy="1"
-        android:shadowRadius="1" />
+    <ImageView android:id="@+id/heart_1"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_2"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_3"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_4"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_5"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_6"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_7"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_8"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_9"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
+    <ImageView android:id="@+id/heart_10"
+        android:layout_width="36dp" android:layout_height="36dp"
+        android:src="@drawable/heart_full" android:scaleType="fitXY" />
 
 </LinearLayout>

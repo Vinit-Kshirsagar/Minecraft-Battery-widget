@@ -16,8 +16,17 @@ class BatteryWidgetProvider : AppWidgetProvider() {
 
     companion object {
         const val ACTION_UPDATE = "com.example.minecraft_battery.UPDATE_WIDGET"
-        const val UPDATE_INTERVAL_MS = 60_000L // every 60 seconds
+        const val UPDATE_INTERVAL_MS = 60_000L
     }
+
+    private val heartIds = listOf(
+        R.id.heart_1, R.id.heart_2, R.id.heart_3, R.id.heart_4, R.id.heart_5,
+        R.id.heart_6, R.id.heart_7, R.id.heart_8, R.id.heart_9, R.id.heart_10
+    )
+
+    enum class HeartState { FULL, HALF, CRACKED, EMPTY }
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
 
     override fun onEnabled(context: Context) {
         super.onEnabled(context)
@@ -41,22 +50,23 @@ class BatteryWidgetProvider : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        val trigger = intent.action == Intent.ACTION_BATTERY_CHANGED ||
-                      intent.action == Intent.ACTION_BATTERY_LOW ||
-                      intent.action == Intent.ACTION_POWER_CONNECTED ||
-                      intent.action == Intent.ACTION_POWER_DISCONNECTED ||
-                      intent.action == ACTION_UPDATE
-
-        if (trigger) {
+        val shouldUpdate = intent.action in listOf(
+            Intent.ACTION_BATTERY_CHANGED,
+            Intent.ACTION_BATTERY_LOW,
+            Intent.ACTION_POWER_CONNECTED,
+            Intent.ACTION_POWER_DISCONNECTED,
+            ACTION_UPDATE
+        )
+        if (shouldUpdate) {
             val manager = AppWidgetManager.getInstance(context)
             val ids = manager.getAppWidgetIds(
                 ComponentName(context, BatteryWidgetProvider::class.java)
             )
-            for (id in ids) {
-                updateWidget(context, manager, id)
-            }
+            for (id in ids) updateWidget(context, manager, id)
         }
     }
+
+    // ── Scheduling ───────────────────────────────────────────────────────────
 
     private fun scheduleUpdates(context: Context) {
         val alarm = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -83,6 +93,8 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         )
     }
 
+    // ── Widget Update ────────────────────────────────────────────────────────
+
     private fun updateWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
@@ -90,24 +102,48 @@ class BatteryWidgetProvider : AppWidgetProvider() {
     ) {
         val views = RemoteViews(context.packageName, R.layout.battery_widget)
         val batteryInfo = getBatteryInfo(context)
-        val hearts = generateHearts(batteryInfo.level)
-        val heartColor = getHeartColor(batteryInfo.level)
-        val statusLabel = buildStatusLabel(batteryInfo)
+        val heartStates = getHeartStates(batteryInfo.level)
 
-        views.setTextViewText(R.id.heartsText, hearts)
-        views.setTextColor(R.id.heartsText, heartColor)
-        views.setTextViewText(R.id.percentageText, statusLabel)
+        for ((index, state) in heartStates.withIndex()) {
+            val drawable = when (state) {
+                HeartState.FULL    -> R.drawable.heart_full
+                HeartState.HALF    -> R.drawable.heart_half
+                HeartState.CRACKED -> R.drawable.heart_cracked
+                HeartState.EMPTY   -> R.drawable.heart_empty
+            }
+            views.setImageViewResource(heartIds[index], drawable)
+        }
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
     }
 
-    // --- Battery ---
+    // ── Heart Logic ──────────────────────────────────────────────────────────
 
-    data class BatteryInfo(
-        val level: Int,        // 0–100
-        val isCharging: Boolean,
-        val temperature: Float // Celsius
-    )
+     private fun getHeartStates(level: Int): List<HeartState> {
+    // Units digit 0-1  → treat as 0  (full hearts only, no partial)
+    // Units digit 2-5  → treat as half heart (.5)
+    // Units digit 6-9  → treat as cracked heart (.5 but damaged)
+    val units = level % 10
+    val filledHalves = when {
+        units in 2..9 -> (level / 10) * 2 + 1  // add a half heart for this decade
+        else          -> (level / 10) * 2        // units 0-1: no partial heart
+    }
+
+    return (1..10).map { heartIndex ->
+        val remaining = filledHalves - (heartIndex - 1) * 2
+        when {
+            remaining >= 2 -> HeartState.FULL
+            remaining == 1 -> {
+                if (units in 6..9) HeartState.CRACKED else HeartState.HALF
+            }
+            else -> HeartState.EMPTY
+        }
+    }
+}
+
+    // ── Battery Info ─────────────────────────────────────────────────────────
+
+    data class BatteryInfo(val level: Int, val isCharging: Boolean)
 
     private fun getBatteryInfo(context: Context): BatteryInfo {
         val filter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
@@ -117,8 +153,7 @@ class BatteryWidgetProvider : AppWidgetProvider() {
             val raw = it.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
             val scale = it.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
             if (raw >= 0 && scale > 0) (raw * 100 / scale) else -1
-        } ?: run {
-            // Fallback to BatteryManager API
+        }?.takeIf { it >= 0 } ?: run {
             val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
             bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
         }
@@ -127,43 +162,6 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         val isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
                          status == BatteryManager.BATTERY_STATUS_FULL
 
-        val rawTemp = intent?.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, 0) ?: 0
-        val temperature = rawTemp / 10f // tenths of a degree → Celsius
-
-        return BatteryInfo(level.coerceIn(0, 100), isCharging, temperature)
-    }
-
-    // --- Heart Rendering ---
-
-    private fun generateHearts(level: Int): String {
-        // Minecraft uses 10 hearts = 20 half-hearts
-        // Map 0–100% to 0–20 half-heart units
-        val totalHalfHearts = 20
-        val filledHalves = Math.round(level / 100f * totalHalfHearts).toInt()
-
-        val fullHearts = filledHalves / 2
-        val hasHalf = filledHalves % 2 == 1
-        val emptyHearts = 10 - fullHearts - (if (hasHalf) 1 else 0)
-
-        return buildString {
-            repeat(fullHearts) { append("♥") }
-            if (hasHalf) append("❥")
-            repeat(emptyHearts) { append("♡") }
-        }
-    }
-
-    private fun getHeartColor(level: Int): Int {
-        return when {
-            level > 50 -> 0xFFE03030.toInt()  // Healthy red
-            level > 25 -> 0xFFE08020.toInt()  // Warning orange
-            else       -> 0xFFE0E020.toInt()  // Critical yellow (Minecraft flashes yellow at low health)
-        }
-    }
-
-    // --- Status Label ---
-
-    private fun buildStatusLabel(info: BatteryInfo): String {
-        val chargingIcon = if (info.isCharging) " ⚡" else ""
-        return "${info.level}%$chargingIcon"
+        return BatteryInfo(level.coerceIn(0, 100), isCharging)
     }
 }

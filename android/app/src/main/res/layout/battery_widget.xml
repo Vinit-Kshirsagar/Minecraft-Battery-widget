@@ -14,51 +14,46 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <TextView
+        <ImageView
             android:id="@+id/myLabel"
-            android:layout_width="20dp"
-            android:layout_height="wrap_content"
-            android:text="Y"
-            android:textColor="#FFE03030"
-            android:textSize="13sp"
-            android:fontFamily="monospace"
-            android:textStyle="bold"
-            android:gravity="center" />
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:scaleType="fitXY" />
 
         <ImageView android:id="@+id/heart_1"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_2"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_3"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_4"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_5"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_6"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_7"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_8"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_9"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/heart_10"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
 
     </LinearLayout>
 
-    <!-- Partner hearts row (hidden until paired) -->
+    <!-- Partner hearts row -->
     <LinearLayout
         android:id="@+id/partnerRow"
         android:layout_width="wrap_content"
@@ -68,46 +63,41 @@
         android:layout_marginTop="4dp"
         android:visibility="gone">
 
-        <TextView
+        <ImageView
             android:id="@+id/partnerLabel"
-            android:layout_width="20dp"
-            android:layout_height="wrap_content"
-            android:text="P"
-            android:textColor="#FFD44080"
-            android:textSize="13sp"
-            android:fontFamily="monospace"
-            android:textStyle="bold"
-            android:gravity="center" />
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:scaleType="fitXY" />
 
         <ImageView android:id="@+id/partner_heart_1"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_2"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_3"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_4"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_5"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_6"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_7"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_8"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_9"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
         <ImageView android:id="@+id/partner_heart_10"
-            android:layout_width="32dp" android:layout_height="32dp"
+            android:layout_width="30dp" android:layout_height="30dp"
             android:src="@drawable/heart_full" android:scaleType="fitXY" />
 
     </LinearLayout>

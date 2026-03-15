@@ -8,6 +8,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.Typeface
 import android.os.BatteryManager
 import android.os.SystemClock
 import android.util.Log
@@ -32,6 +37,7 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         const val PREF_PARTNER_BATTERY  = "partner_battery_cache"
         const val PREF_MY_LABEL         = "my_label"
         const val PREF_PARTNER_LABEL    = "partner_label"
+        const val PREF_HEART_SIZE       = "heart_size"
     }
 
     private val heartIds = listOf(
@@ -135,49 +141,43 @@ class BatteryWidgetProvider : AppWidgetProvider() {
     ) {
         try {
             val batteryInfo = getBatteryInfo(context)
-            Log.d(TAG, "Battery: ${batteryInfo.level}%, charging: ${batteryInfo.isCharging}")
+            Log.d(TAG, "Battery: ${batteryInfo.level}%")
 
             val prefs = context.getSharedPreferences(
                 "FlutterSharedPreferences", Context.MODE_PRIVATE)
 
-            val myCode           = prefs.getString(PREF_MY_CODE, null)
-            val partnerCode      = prefs.getString(PREF_PARTNER_CODE, null)
-            val cachedPartner    = prefs.getInt(PREF_PARTNER_BATTERY, -1)
-            val myLabel          = prefs.getString(PREF_MY_LABEL, "Y") ?: "Y"
-            val partnerLabel     = prefs.getString(PREF_PARTNER_LABEL, "P") ?: "P"
+            val myCode        = prefs.getString(PREF_MY_CODE, null)
+            val partnerCode   = prefs.getString(PREF_PARTNER_CODE, null)
+            val cachedPartner = prefs.getInt(PREF_PARTNER_BATTERY, -1)
+            val myLabel       = prefs.getString(PREF_MY_LABEL, "Y") ?: "Y"
+            val partnerLabel  = prefs.getString(PREF_PARTNER_LABEL, "P") ?: "P"
+            val heartSizeDp   = prefs.getFloat(PREF_HEART_SIZE, 30f)
+            val heartSizePx   = (heartSizeDp * context.resources.displayMetrics.density).toInt()
 
-            Log.d(TAG, "myCode=$myCode partnerCode=$partnerCode " +
-                       "cachedPartner=$cachedPartner myLabel=$myLabel partnerLabel=$partnerLabel")
+            Log.d(TAG, "myCode=$myCode partnerCode=$partnerCode")
 
-            // Render immediately with cached data
             renderWidget(
                 context, appWidgetManager, appWidgetId,
                 batteryInfo.level, cachedPartner, partnerCode != null,
-                myLabel, partnerLabel
+                myLabel, partnerLabel, heartSizePx
             )
 
-            // Skip network if app has never been opened
             if (myCode == null) {
                 Log.d(TAG, "myCode null — skipping network")
                 return
             }
 
-            // Push + fetch in background
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    Log.d(TAG, "Pushing battery to Supabase")
                     pushBattery(myCode, batteryInfo.level)
 
                     var partnerBattery = cachedPartner
                     if (partnerCode != null) {
-                        Log.d(TAG, "Fetching partner battery")
                         val fetched = fetchPartnerBattery(partnerCode)
-                        Log.d(TAG, "Partner battery fetched: $fetched")
+                        Log.d(TAG, "Partner battery: $fetched")
                         if (fetched != null) {
                             partnerBattery = fetched
-                            prefs.edit()
-                                .putInt(PREF_PARTNER_BATTERY, fetched)
-                                .apply()
+                            prefs.edit().putInt(PREF_PARTNER_BATTERY, fetched).apply()
                         }
                     }
 
@@ -185,11 +185,11 @@ class BatteryWidgetProvider : AppWidgetProvider() {
                         renderWidget(
                             context, appWidgetManager, appWidgetId,
                             batteryInfo.level, partnerBattery, partnerCode != null,
-                            myLabel, partnerLabel
+                            myLabel, partnerLabel, heartSizePx
                         )
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Network coroutine failed: ${e.message}", e)
+                    Log.e(TAG, "Network failed: ${e.message}", e)
                 }
             }
         } catch (e: Exception) {
@@ -207,34 +207,41 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         partnerBattery: Int,
         isPaired: Boolean,
         myLabel: String,
-        partnerLabel: String
+        partnerLabel: String,
+        heartSizePx: Int
     ) {
         try {
-            Log.d(TAG, "renderWidget: my=$myBattery partner=$partnerBattery " +
-                       "paired=$isPaired myLabel=$myLabel partnerLabel=$partnerLabel")
-
             val views = RemoteViews(context.packageName, R.layout.battery_widget)
 
-            // Labels
-            views.setTextViewText(R.id.myLabel, myLabel.take(1).uppercase())
-            views.setTextViewText(R.id.partnerLabel, partnerLabel.take(1).uppercase())
+            // My initial — white text, black outline, same size as hearts
+            val myBitmap = makeInitialBitmap(
+                myLabel.firstOrNull()?.uppercaseChar()?.toString() ?: "Y",
+                heartSizePx
+            )
+            views.setImageViewBitmap(R.id.myLabel, myBitmap)
 
-            // My hearts
+            // My hearts — original PNGs, no tinting
             val myStates = getHeartStates(myBattery.coerceAtLeast(0))
             for ((i, state) in myStates.withIndex()) {
                 views.setImageViewResource(heartIds[i], drawableFor(state))
             }
 
-            // Partner hearts
+            // Partner row
             if (isPaired && partnerBattery >= 0) {
-                Log.d(TAG, "Showing partner row")
                 views.setViewVisibility(R.id.partnerRow, android.view.View.VISIBLE)
+
+                val partBitmap = makeInitialBitmap(
+                    partnerLabel.firstOrNull()?.uppercaseChar()?.toString() ?: "P",
+                    heartSizePx
+                )
+                views.setImageViewBitmap(R.id.partnerLabel, partBitmap)
+
+                // Partner hearts — original PNGs, no tinting
                 val partnerStates = getHeartStates(partnerBattery)
                 for ((i, state) in partnerStates.withIndex()) {
                     views.setImageViewResource(partnerHeartIds[i], drawableFor(state))
                 }
             } else {
-                Log.d(TAG, "Hiding partner row")
                 views.setViewVisibility(R.id.partnerRow, android.view.View.GONE)
             }
 
@@ -245,14 +252,58 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    // ── Initial bitmap — white fill, black outline, scales with heart size ────
+
+    private fun makeInitialBitmap(letter: String, heartSizePx: Int): Bitmap {
+        // Draw on a 3x canvas then scale down for smooth anti-aliased edges
+        val scale  = 3
+        val canvas_size = heartSizePx * scale
+        val bmp    = Bitmap.createBitmap(canvas_size, canvas_size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bmp)
+
+        val textSize    = canvas_size * 0.68f
+        val strokeWidth = canvas_size * 0.14f
+
+        // Black outline paint
+        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color       = Color.BLACK
+            this.textSize   = textSize
+            typeface    = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            textAlign   = Paint.Align.CENTER
+            style       = Paint.Style.STROKE
+            this.strokeWidth = strokeWidth
+            strokeJoin  = Paint.Join.ROUND
+            strokeCap   = Paint.Cap.ROUND
+        }
+
+        // White fill paint
+        val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color       = Color.WHITE
+            this.textSize   = textSize
+            typeface    = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+            textAlign   = Paint.Align.CENTER
+            style       = Paint.Style.FILL
+        }
+
+        val x = canvas_size / 2f
+        // Vertically centre the glyph
+        val y = canvas_size / 2f - (strokePaint.ascent() + strokePaint.descent()) / 2f
+
+        canvas.drawText(letter, x, y, strokePaint) // outline first
+        canvas.drawText(letter, x, y, fillPaint)   // fill on top
+
+        // Scale back down to heartSizePx — gives smooth result vs drawing small directly
+        return Bitmap.createScaledBitmap(bmp, heartSizePx, heartSizePx, true)
+    }
+
+    // ── Heart logic ───────────────────────────────────────────────────────────
+
     private fun drawableFor(state: HeartState): Int = when (state) {
         HeartState.FULL    -> R.drawable.heart_full
         HeartState.HALF    -> R.drawable.heart_half
         HeartState.CRACKED -> R.drawable.heart_cracked
         HeartState.EMPTY   -> R.drawable.heart_empty
     }
-
-    // ── Heart logic ───────────────────────────────────────────────────────────
 
     private fun getHeartStates(level: Int): List<HeartState> {
         val units = level % 10
@@ -299,22 +350,16 @@ class BatteryWidgetProvider : AppWidgetProvider() {
                 setRequestProperty("apikey", Secrets.SUPABASE_KEY)
                 setRequestProperty("Authorization", "Bearer ${Secrets.SUPABASE_KEY}")
                 setRequestProperty("Prefer", "resolution=merge-duplicates")
-                doOutput        = true
-                connectTimeout  = 5000
-                readTimeout     = 5000
+                doOutput = true; connectTimeout = 5000; readTimeout = 5000
             }
             val body = JSONObject().apply {
-                put("code", code)
-                put("battery", battery)
+                put("code", code); put("battery", battery)
                 put("updated_at", java.util.Date().toString())
             }.toString()
             conn.outputStream.use { it.write(body.toByteArray()) }
-            val responseCode = conn.responseCode
-            Log.d(TAG, "pushBattery response: $responseCode")
+            Log.d(TAG, "pushBattery: ${conn.responseCode}")
             conn.disconnect()
-        } catch (e: Exception) {
-            Log.e(TAG, "pushBattery failed: ${e.message}")
-        }
+        } catch (e: Exception) { Log.e(TAG, "pushBattery failed: ${e.message}") }
     }
 
     private fun fetchPartnerBattery(partnerCode: String): Int? {
@@ -324,18 +369,13 @@ class BatteryWidgetProvider : AppWidgetProvider() {
                 requestMethod = "GET"
                 setRequestProperty("apikey", Secrets.SUPABASE_KEY)
                 setRequestProperty("Authorization", "Bearer ${Secrets.SUPABASE_KEY}")
-                connectTimeout = 5000
-                readTimeout    = 5000
+                connectTimeout = 5000; readTimeout = 5000
             }
             val response = conn.inputStream.bufferedReader().readText()
-            val responseCode = conn.responseCode
-            Log.d(TAG, "fetchPartnerBattery response: $responseCode body: $response")
+            Log.d(TAG, "fetchPartner: ${conn.responseCode} $response")
             conn.disconnect()
             val arr = JSONArray(response)
             if (arr.length() > 0) arr.getJSONObject(0).getInt("battery") else null
-        } catch (e: Exception) {
-            Log.e(TAG, "fetchPartnerBattery failed: ${e.message}")
-            null
-        }
+        } catch (e: Exception) { Log.e(TAG, "fetchPartner failed: ${e.message}"); null }
     }
 }

@@ -58,29 +58,6 @@ class _HomeState extends State<HomePage> {
             ])),
             const SizedBox(height: 14),
 
-            // ── My code ──────────────────────────────────────────────────────
-            appCard(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              sectionLabel('YOUR CODE'),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                    child: Text(s.myCode,
-                        style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 8,
-                            fontFamily: 'monospace'))),
-                CopyBtn(s.myCode),
-              ]),
-              const SizedBox(height: 8),
-              const Text('Share with your partner to pair.',
-                  style: TextStyle(
-                      color: Color(0xFF444444),
-                      fontSize: 11,
-                      fontFamily: 'monospace')),
-            ])),
-            const SizedBox(height: 14),
-
             // ── Appearance ───────────────────────────────────────────────────
             appCard(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               sectionLabel('APPEARANCE'),
@@ -139,8 +116,13 @@ class _HomeState extends State<HomePage> {
                 divisions: 20,
                 activeColor: const Color(0xFFE03030),
                 inactiveColor: const Color(0xFF222222),
+                // Update state live so the dp badge and preview refresh
                 onChanged: (v) => setState(() => s.heartSize = v),
-                onChangeEnd: (v) { s.heartSize = v; s.save(); },
+                // Persist to SharedPreferences only when user lifts finger
+                onChangeEnd: (v) {
+                  s.heartSize = v;
+                  s.save();
+                },
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -191,25 +173,33 @@ class _HomeState extends State<HomePage> {
   Widget _row(String lbl, int bat, Color col, double sz) => Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          // Initial — slightly smaller than hearts so all 10 fit comfortably
           SizedBox(
-            width: 20,
-            child: Text(
-              lbl.isEmpty ? ' ' : lbl[0].toUpperCase(),
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: col,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
-                  shadows: [
-                    Shadow(
-                        color: Colors.black.withOpacity(0.8),
-                        offset: const Offset(1, 1),
-                        blurRadius: 2)
-                  ]),
+            width: sz * 0.75,
+            height: sz * 0.75,
+            child: Center(
+              child: Text(
+                lbl.isEmpty ? ' ' : lbl[0].toUpperCase(),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                    color: Colors.white,
+                    fontSize: sz * 0.5,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                    shadows: const [
+                      Shadow(
+                          color: Colors.black,
+                          offset: Offset(1, 1),
+                          blurRadius: 3),
+                      Shadow(
+                          color: Colors.black,
+                          offset: Offset(-1, -1),
+                          blurRadius: 3),
+                    ]),
+              ),
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 2),
           HeartRow(bat, size: sz, color: col),
         ],
       );

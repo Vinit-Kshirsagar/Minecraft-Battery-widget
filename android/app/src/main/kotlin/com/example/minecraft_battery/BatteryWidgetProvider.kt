@@ -35,9 +35,9 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         const val PREF_MY_CODE          = "flutter.my_code"
         const val PREF_PARTNER_CODE     = "flutter.partner_code"
         const val PREF_PARTNER_BATTERY  = "partner_battery_cache"
-        const val PREF_MY_LABEL         = "my_label"
-        const val PREF_PARTNER_LABEL    = "partner_label"
-        const val PREF_HEART_SIZE       = "heart_size"
+        const val PREF_MY_LABEL         = "flutter.my_label"
+        const val PREF_PARTNER_LABEL    = "flutter.partner_label"
+        const val PREF_HEART_SIZE       = "flutter.heart_size"
     }
 
     private val heartIds = listOf(
@@ -151,8 +151,12 @@ class BatteryWidgetProvider : AppWidgetProvider() {
             val cachedPartner = prefs.getInt(PREF_PARTNER_BATTERY, -1)
             val myLabel       = prefs.getString(PREF_MY_LABEL, "Y") ?: "Y"
             val partnerLabel  = prefs.getString(PREF_PARTNER_LABEL, "P") ?: "P"
-            val heartSizeDp   = prefs.getFloat(PREF_HEART_SIZE, 30f)
-            val heartSizePx   = (heartSizeDp * context.resources.displayMetrics.density).toInt()
+            // Flutter stores doubles as a base64-prefixed string, not a float.
+            // e.g. "VGhpcyBpcyB0aGUgcHJlZml4IGZvciBEb3VibGUu30.0"
+            // Strip the 44-char prefix and parse the numeric remainder.
+            val heartSizeDp   = parseFlutterDouble(prefs.getString(PREF_HEART_SIZE, null), 30.0)
+            val heartSizePx   = (heartSizeDp * context.resources.displayMetrics.density)
+                .toInt().coerceAtLeast(10) // guard: 0 crashes Bitmap.createBitmap
 
             Log.d(TAG, "myCode=$myCode partnerCode=$partnerCode")
 
@@ -252,12 +256,31 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    // ── Flutter double decoder ────────────────────────────────────────────────
+    // Flutter's shared_preferences encodes doubles as:
+    //   base64("This is the prefix for Double.") + the numeric string
+    // The prefix is always 44 characters. We strip it and parse what remains.
+    private fun parseFlutterDouble(raw: String?, fallback: Double): Double {
+        if (raw == null) return fallback
+        return try {
+            // The prefix "VGhpcyBpcyB0aGUgcHJlZml4IGZvciBEb3VibGUu" is 40 chars
+            // but actual stored strings may vary slightly — find where digits start
+            val numeric = raw.dropWhile { !it.isDigit() && it != '-' }
+            numeric.toDouble()
+        } catch (e: Exception) {
+            Log.w(TAG, "parseFlutterDouble failed for '$raw', using $fallback")
+            fallback
+        }
+    }
+
     // ── Initial bitmap — white fill, black outline, scales with heart size ────
 
     private fun makeInitialBitmap(letter: String, heartSizePx: Int): Bitmap {
+        // Initial is 75% of heart size so all 10 hearts fit alongside it
+        val initialSizePx = (heartSizePx * 0.75f).toInt().coerceAtLeast(1)
         // Draw on a 3x canvas then scale down for smooth anti-aliased edges
         val scale  = 3
-        val canvas_size = heartSizePx * scale
+        val canvas_size = initialSizePx * scale
         val bmp    = Bitmap.createBitmap(canvas_size, canvas_size, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bmp)
 
@@ -292,8 +315,8 @@ class BatteryWidgetProvider : AppWidgetProvider() {
         canvas.drawText(letter, x, y, strokePaint) // outline first
         canvas.drawText(letter, x, y, fillPaint)   // fill on top
 
-        // Scale back down to heartSizePx — gives smooth result vs drawing small directly
-        return Bitmap.createScaledBitmap(bmp, heartSizePx, heartSizePx, true)
+        // Scale back down to initialSizePx — gives smooth result vs drawing small directly
+        return Bitmap.createScaledBitmap(bmp, initialSizePx, initialSizePx, true)
     }
 
     // ── Heart logic ───────────────────────────────────────────────────────────

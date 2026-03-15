@@ -63,8 +63,31 @@ class _PartnerState extends State<PartnerPage> {
             ]),
             const SizedBox(height: 24),
 
+            // ── Your code — always visible on this page ───────────────────
+            appCard(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              sectionLabel('YOUR CODE'),
+              const SizedBox(height: 12),
+              Row(children: [
+                Expanded(
+                    child: Text(s.myCode,
+                        style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 8,
+                            fontFamily: 'monospace'))),
+                CopyBtn(s.myCode),
+              ]),
+              const SizedBox(height: 8),
+              const Text('Share with your partner to pair.',
+                  style: TextStyle(
+                      color: Color(0xFF444444),
+                      fontSize: 11,
+                      fontFamily: 'monospace')),
+            ])),
+            const SizedBox(height: 14),
+
             if (s.isPaired) ...[
-              // ── Paired card ────────────────────────────────────────────────
+              // ── Paired card ──────────────────────────────────────────────
               Container(
                 padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
@@ -142,7 +165,7 @@ class _PartnerState extends State<PartnerPage> {
                 ),
               ),
             ] else ...[
-              // ── Pair card ──────────────────────────────────────────────────
+              // ── Pair card ────────────────────────────────────────────────
               appCard(Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -217,19 +240,6 @@ class _PartnerState extends State<PartnerPage> {
                             fontSize: 11,
                             fontFamily: 'monospace')),
                   ],
-                  const SizedBox(height: 16),
-                  Row(children: [
-                    sectionLabel('YOUR CODE  '),
-                    const SizedBox(width: 8),
-                    Text(s.myCode,
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'monospace',
-                            letterSpacing: 4)),
-                    const Spacer(),
-                    CopyBtn(s.myCode, small: true),
-                  ]),
                 ],
               )),
             ],

@@ -14,11 +14,12 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
+        <!-- Fixed at 23dp (≈75% of default 30dp hearts). Bitmap is set at runtime. -->
         <ImageView
             android:id="@+id/myLabel"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:scaleType="fitXY" />
+            android:layout_width="23dp"
+            android:layout_height="23dp"
+            android:scaleType="fitCenter" />
 
         <ImageView android:id="@+id/heart_1"
             android:layout_width="30dp" android:layout_height="30dp"
@@ -63,11 +64,12 @@
         android:layout_marginTop="4dp"
         android:visibility="gone">
 
+        <!-- Fixed at 23dp (≈75% of default 30dp hearts). Bitmap is set at runtime. -->
         <ImageView
             android:id="@+id/partnerLabel"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:scaleType="fitXY" />
+            android:layout_width="23dp"
+            android:layout_height="23dp"
+            android:scaleType="fitCenter" />
 
         <ImageView android:id="@+id/partner_heart_1"
             android:layout_width="30dp" android:layout_height="30dp"

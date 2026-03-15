@@ -44,6 +44,7 @@ class S extends ChangeNotifier {
 
   Future<void> refresh() => _fetchPartner();
 
+  // Saves everything and notifies listeners so the widget rebuilds
   Future<void> save() async {
     final p = await SharedPreferences.getInstance();
     await p.setString('my_label', myLabel);
@@ -51,6 +52,7 @@ class S extends ChangeNotifier {
     await p.setInt('my_color', myColor.value);
     await p.setInt('partner_color', partnerColor.value);
     await p.setDouble('heart_size', heartSize);
+    notifyListeners();
   }
 
   Future<void> pair(String code) async {

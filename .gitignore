@@ -6,8 +6,11 @@
 *.swp
 .buildlog/
 .history
+.secrets/
 
 
+lib/secrets.dart
+android/app/src/main/kotlin/com/example/minecraft_battery/Secrets.kt
 
 # Flutter repo-specific
 /bin/cache/
